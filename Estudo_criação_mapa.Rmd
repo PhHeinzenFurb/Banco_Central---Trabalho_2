@@ -1,0 +1,180 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Criação do Mapa do Brasil com Destaque Para Regiões
+
+## 1. Objetivo
+
+O objetivo da seguinte análise é complementar a taxa de endividamento das famílias - a qual é a premissa inicial do trabalho - com as operações de crédito em cada uma das regiões do Brasil, assim como avaliar a taxa de inadimplência em cada um deles.
+
+## 2. Plotagem
+
+A informação será destacada através de um mapa interativo. A interação deverá se dar através do usuário passando a seta por cima da região, assim como uma animação por ano.
+
+## 3. Códigos Utilizados
+
+-   **14087**: Saldo das operações de crédito do Sistema Financeiro Nacional - Região Sul - Pessoas físicas
+-   **15892**: Taxa de inadimplência das operações de crédito do Sistema Financeiro Nacional - Região Sul - Pessoas físicas
+-   **14086**: Saldo das operações de crédito do Sistema Financeiro Nacional - Região Sudeste - Pessoas físicas
+-   **15891**: Taxa de inadimplência das operações de crédito do Sistema Financeiro Nacional - Região Sudeste - Pessoas físicas
+-   **14085**: Saldo das operações de crédito do Sistema Financeiro Nacional - Região Centro-Oeste - Pessoas físicas
+-   **15890**: Taxa de inadimplência das operações de crédito do Sistema Financeiro Nacional - Região Centro-Oeste - Pessoas físicas
+-   **14084**: Saldo das operações de crédito do Sistema Financeiro Nacional - Região Nordeste - Pessoas físicas
+-   **15889**: completo Taxa de inadimplência das operações de crédito do Sistema Financeiro Nacional - Região Nordeste - Pessoas físicas
+-   **14083**: Saldo das operações de crédito do Sistema Financeiro Nacional - Região Norte - Pessoas físicas
+-   **15888**: Taxa de inadimplência das operações de crédito do Sistema Financeiro Nacional - Região Norte - Pessoas físicas
+
+```{r}
+library(GetBCBData)
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+# FUNÇÃO PARA EXTRAIR OS DADOS DO BCB VIA BIBLIOTECA GetBCBData
+get_bcb_data <- function(id, first_date){
+  gbcbd_get_series(
+    id = id,
+    first.date = first_date,
+    last.date = Sys.Date(),
+    format.data = "long",
+    use.memoise = TRUE,
+    cache.path = tempdir(),
+    do.parallel = FALSE
+  )
+}
+
+# FUNÇÃO PARA TRATAMENTO PADRÃO DOS DADOS GERADOS POR get_bcb_data
+df_bcb_format <- function(df){
+  df |>
+    select(-id.num) |>
+    pivot_wider(
+      names_from = series.name,
+      values_from = value
+    )
+}
+```
+
+### Trabalhando com os saldos das operações de Crédito
+
+```{r}
+# criando lista para códigos dos saldo das operações de crédito
+ids_saldo <- c("Saldo das Operações de Crédito - Sul" = 14087,
+               "Saldo das Operações de Crédito - Sudeste" = 14086,
+               "Saldo das Operações de Crédito - Centro-Oeste" = 14085,
+               "Saldo das Operações de Crédito - Nordeste" = 14084,
+               "Saldo das Operações de Crédito - Norte" = 14083)
+```
+
+```{r}
+# criando df para os saldos de operações de crédito em cada região
+df_saldosCred_regioes <- get_bcb_data(ids_saldo, "2012-02-01")
+```
+
+```{r}
+# detectando parte de uma string na coluna series.name atraves de str_detect()
+# criando a coluna regioes através das condições
+# extraindo ano e mes da coluna ref.date
+# renomeando a coluna "value"
+# filtrando o saldo para o mes 12
+# retirando as colunas ref.date, is.num, series.name
+df_saldoCred_regioes_alter <- df_saldosCred_regioes |>
+  mutate(
+  name_region = case_when(
+    str_detect(series.name, "Sul") ~ "Sul",
+    str_detect(series.name, "Sudeste") ~ "Sudeste",
+    str_detect(series.name, "Centro-Oeste") ~ "Centro Oeste",
+    str_detect(series.name, "Nordeste") ~ "Nordeste",
+    str_detect(series.name, "Norte") ~ "Norte",
+  ),
+  mes = month(ref.date),
+  ano = year(ref.date)
+  ) |>
+  rename(`saldo_operações_crédito(R$ milhões)` = value) |>
+  filter(mes == 12) |>
+  select(-c(ref.date, id.num, series.name))
+```
+
+```{r}
+df_saldoCred_regioes_alter
+```
+
+### Trabalhando com as taxas de inadimplência
+
+```{r}
+# criando lista para códigos dos saldo das operações de crédito
+ids_inad <- c("Inadimplencia nas Operações de Crédito - Sul" = 15892,
+              "Inadimplencia nas Operações de Crédito - Sudeste" = 15891,
+              "Inadimplencia nas Operações de Crédito - Centro-Oeste" = 15890,
+              "Inadimplencia nas Operações de Crédito - Nordeste" = 15889,
+              "Inadimplencia nas Operações de Crédito - Norte" = 15888)
+```
+
+```{r}
+# criando df para inadimplencia em cada região
+df_inad_regioes <- get_bcb_data(ids_inad, "2012-02-01")
+```
+
+```{r}
+# detectando parte de uma string na coluna series.name atraves de str_detect()
+# criando a coluna regioes através das condições
+# extraindo ano e mes da coluna ref.date
+# renomeando a coluna "value"
+# filtrando o saldo para o mes 12
+# retirando as colunas ref.date, is.num, series.name
+df_inad_regioes_alter <- df_inad_regioes |>
+  mutate(
+  name_region = case_when(
+    str_detect(series.name, "Sul") ~ "Sul",
+    str_detect(series.name, "Sudeste") ~ "Sudeste",
+    str_detect(series.name, "Centro-Oeste") ~ "Centro Oeste",
+    str_detect(series.name, "Nordeste") ~ "Nordeste",
+    str_detect(series.name, "Norte") ~ "Norte",
+  ),
+  mes = month(ref.date),
+  ano = year(ref.date)
+  ) |>
+  rename(`inadimplencia_operações_crédito(%)` = value) |>
+  filter(mes == 12) |>
+  select(-c(ref.date, id.num, series.name))
+```
+
+```{r}
+df_inad_regioes_alter
+```
+
+### Criando plotagem de mapa para cada regiao do Brasil
+
+```{r}
+# chamando biblioteca geobr com dados espaciais do brasil
+# sf para plotagem de mapas
+library(geobr)
+library(sf)
+```
+
+```{r}
+# trabalhando com os dados de saldo das operações de crédito
+mapa_regiao <- read_region(year = 2020)
+```
+
+```{r}
+# left join com regiao para mesclar as tabelas de operações e dados geoespaciais
+df_saldoCred_regioes_geo <- mapa_regiao |>
+  left_join(df_saldoCred_regioes_alter, by = "name_region")
+```
+
+```{r}
+
+ggplot(df_saldoCred_regioes_geo) +
+  geom_sf(aes(fill = `saldo_operações_crédito(R$ milhões)`))
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
