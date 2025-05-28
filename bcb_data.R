@@ -8,7 +8,7 @@ library(tidyverse)
 my_id_29037 <- c("Endividamento das famílias %" = 29037)
 
 df_bcb_endiv <- gbcbd_get_series(
-  id = my_id,
+  id = my_id_29037,
   first.date = "2012-02-01",
   last.date = Sys.Date(),
   format.data = "long",
@@ -68,3 +68,15 @@ df_bcb <- df_bcb |>
       ((`Rendimento médio real efetivo de todos os trabalhos R$`) - lag(`Rendimento médio real efetivo de todos os trabalhos R$`, 12)) /
          lag(`Rendimento médio real efetivo de todos os trabalhos R$`, 12) * 100, digits = 2)
     )
+
+my_id_15892 <- c("Inadimplência das operações de crédito Sul PF %" = 15892)
+
+df_bcb_inad_sul <- gbcbd_get_series(
+  id = my_id_15892,
+  first.date = "2012-02-01",
+  last.date = Sys.Date(),
+  format.data = "long",
+  use.memoise = TRUE,
+  cache.path = tempdir(),
+  do.parallel = FALSE
+)
