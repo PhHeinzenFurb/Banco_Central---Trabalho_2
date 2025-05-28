@@ -82,10 +82,10 @@ df_saldosCred_regioes <- get_bcb_data(ids_saldo, "2012-02-01")
 # retirando as colunas ref.date, is.num, series.name
 df_saldoCred_regioes_alter <- df_saldosCred_regioes |>
   mutate(
-  regiao = case_when(
+  name_region = case_when(
     str_detect(series.name, "Sul") ~ "Sul",
     str_detect(series.name, "Sudeste") ~ "Sudeste",
-    str_detect(series.name, "Centro-Oeste") ~ "Centro-Oeste",
+    str_detect(series.name, "Centro-Oeste") ~ "Centro Oeste",
     str_detect(series.name, "Nordeste") ~ "Nordeste",
     str_detect(series.name, "Norte") ~ "Norte",
   ),
@@ -126,10 +126,10 @@ df_inad_regioes <- get_bcb_data(ids_inad, "2012-02-01")
 # retirando as colunas ref.date, is.num, series.name
 df_inad_regioes_alter <- df_inad_regioes |>
   mutate(
-  regiao = case_when(
+  name_region = case_when(
     str_detect(series.name, "Sul") ~ "Sul",
     str_detect(series.name, "Sudeste") ~ "Sudeste",
-    str_detect(series.name, "Centro-Oeste") ~ "Centro-Oeste",
+    str_detect(series.name, "Centro-Oeste") ~ "Centro Oeste",
     str_detect(series.name, "Nordeste") ~ "Nordeste",
     str_detect(series.name, "Norte") ~ "Norte",
   ),
@@ -148,7 +148,27 @@ df_inad_regioes_alter
 ### Criando plotagem de mapa para cada regiao do Brasil
 
 ```{r}
+# chamando biblioteca geobr com dados espaciais do brasil
+# sf para plotagem de mapas
+library(geobr)
+library(sf)
+```
 
+```{r}
+# trabalhando com os dados de saldo das operações de crédito
+mapa_regiao <- read_region(year = 2020)
+```
+
+```{r}
+# left join com regiao para mesclar as tabelas de operações e dados geoespaciais
+df_saldoCred_regioes_geo <- mapa_regiao |>
+  left_join(df_saldoCred_regioes_alter, by = "name_region")
+```
+
+```{r}
+
+ggplot(df_saldoCred_regioes_geo) +
+  geom_sf(aes(fill = `saldo_operações_crédito(R$ milhões)`))
 ```
 
 ```{r}
