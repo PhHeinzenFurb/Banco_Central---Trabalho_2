@@ -181,7 +181,7 @@ library(patchwork) # une diferentes tipos de gráficos
 
 ```{r}
 # criando mapa base para a interatividade
-graf_base_mapa <- ggplot() +
+p1 <- ggplot() +
   geom_sf(data = filter(df_saldoCred_regioes_geo, ano == 2024),
           fill = "lightgrey", color = "lightgrey") +
   geom_sf_interactive(data = filter(df_saldoCred_regioes_geo, ano == 2024),
@@ -198,8 +198,33 @@ graf_base_mapa <- ggplot() +
 ```
 
 ```{r}
+# criando geom_col com os valores de cada regiao
+p2 <- ggplot(df_saldoCred_regioes_geo, 
+                          aes(
+                            x = reorder(name_region, `saldo_operações_crédito(R$ milhões)`),
+                            y = `saldo_operações_crédito(R$ milhões)`,
+                            tooltip = name_region,
+                            data_id = name_region,
+                            fill = name_region)
+                          ) +
+  geom_col_interactive(data = filter(df_saldoCred_regioes_geo, ano == 2024)) +
+  coord_flip() + 
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
+```
+
+```{r}
+# combinando os dois gráficos 
+combined_plot <- p1 + p2
+```
+
+```{r}
 # criando a interatividade
-mapa_int <- girafe(ggobj = graf_base_mapa)
+mapa_int <- girafe(ggobj = combined_plot)
 mapa_int <- girafe_options(
   mapa_int,
   opts_hover(css = "fill:red;stroke:black")
