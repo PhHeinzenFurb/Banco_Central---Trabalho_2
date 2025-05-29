@@ -167,8 +167,47 @@ df_saldoCred_regioes_geo <- mapa_regiao |>
 
 ```{r}
 
-ggplot(df_saldoCred_regioes_geo) +
+ggplot(filter(df_saldoCred_regioes_geo, ano == 2024)) +
   geom_sf(aes(fill = `saldo_operações_crédito(R$ milhões)`))
+```
+
+### Trabalhando com a interatividade do mapa
+
+```{r}
+# chamando bibliotecas necessárias interatividade
+library(ggiraph) # programa a interatividade
+library(patchwork) # une diferentes tipos de gráficos
+```
+
+```{r}
+# criando mapa base para a interatividade
+graf_base_mapa <- ggplot() +
+  geom_sf(data = filter(df_saldoCred_regioes_geo, ano == 2024),
+          fill = "lightgrey", color = "lightgrey") +
+  geom_sf_interactive(data = filter(df_saldoCred_regioes_geo, ano == 2024),
+                      aes(fill = name_region,
+                          tooltip = name_region,
+                          data_id = name_region)) +
+  coord_sf(crs = st_crs(3857)) +
+  theme_void() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
+```
+
+```{r}
+# criando a interatividade
+mapa_int <- girafe(ggobj = graf_base_mapa)
+mapa_int <- girafe_options(
+  mapa_int,
+  opts_hover(css = "fill:red;stroke:black")
+) 
+```
+
+```{r}
+mapa_int
 ```
 
 ```{r}
