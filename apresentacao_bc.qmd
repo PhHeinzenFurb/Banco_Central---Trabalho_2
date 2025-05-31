@@ -1,9 +1,13 @@
 ---
-title: "Análise de Energia e Poluição"
+title: "Análise de Endividamento e Inadimplência"
 author: "Pedro Henrique Heinzen"
 format: html
 editor: visual
 ---
+
+# Apresentação
+
+O presente trabalho se dedica à análises simples nas taxas de endividamento das famílias brasileiras e na taxa de inadimplência das pessoas físicas nas operações de crédito. Os dados foram extraidos do Sistema Gerenciador de Séries Temporais do Banco Central ([SGS](https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries))
 
 ```{r}
 #| label: load-packages # nomes únicos
@@ -78,8 +82,14 @@ df_inadCred_regioes <- df_inadCred_regioes |>
 
 ```
 
+------------------------------------------------------------------------
+
+## Endividamento das Famílias Brasileiras
+
+O código utilizado para esta análise foi o `29037` extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal. É possível interagir na linha do gráfico, permitindo verificar os valor para cada mês.
+
 ```{r}
-#| label: dadosempainel
+#| label: endividamento-famílias
 #| warning: false
 #| echo: false
 
@@ -89,7 +99,10 @@ p <- df_endiv_format %>%
   geom_area(fill="#69b3a2", alpha=0.5) +
   geom_line(color="#69b3a2") +
   ylab("Endividamento das famílias %") +
-  theme_ipsum()
+  theme_ipsum() +
+  labs(
+    title = "Taxa de Endividamento das Famílias Brasileiras (2012 - 2025)"
+  )
 
 # Turn it interactive with ggplotly
 p <- ggplotly(p)
@@ -97,8 +110,14 @@ p
 
 ```
 
+------------------------------------------------------------------------
+
+## Inadimplência de Pessoas Físicas em Operações de Crédito
+
+Os gráficos abaixo pegam como referência os dados de acordo com a região do país (códigos: `15892`, `15891`, `15890`, `15889`, `15888`). Foram consideradas as taxas de inadimplência de pessoas físicas, e se entendem por operações de crédito empréstimos e finaciamentos fornecidos por instiuições financeiras. Os gráficos interagem entre si na medida em que a região selecionada destaca a posição em relação à taxa de inadimplência. Os dados são referentes ao ano de 2024.
+
 ```{r}
-#| label: serietemporal
+#| label: inadimplencia-pessoas-fisicas
 #| warning: false
 #| echo: false
 
@@ -155,5 +174,3 @@ mapa_int <- girafe_options(
 mapa_int
 
 ```
-
-## 
