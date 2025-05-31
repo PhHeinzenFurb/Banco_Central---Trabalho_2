@@ -1,6 +1,8 @@
 # chamando as biliotecas
 library(GetBCBData)
 library(tidyverse)
+library(plotly)
+library(hrbrthemes)
 
 # FUNÇÃO PARA EXTRAIR OS DADOS DO BCB VIA BIBLIOTECA GetBCBData
 get_bcb_data <- function(id, first_date){
@@ -31,7 +33,7 @@ df_bcb_format <- function(df){
 
 my_id_29037 <- c("Endividamento das famílias %" = 29037)
 
-df_endiv <- get_bcb_data(my_id_29037, "2012-02-01")
+df_endiv <- get_bcb_data(my_id_29037, "2012-01-01")
 df_endiv_format <- df_bcb_format(df_endiv)
 
 # CÓDIGO A SER UTILIZADO: 4393
@@ -70,4 +72,14 @@ df_cred_total <- get_bcb_data(my_id_20606, "2012-02-01")
 df_cred_total_format <- df_bcb_format(df_cred_total)
 
 
+# Usual area chart
+p <- df_endiv_format %>%
+  ggplot( aes(x=ref.date, y=`Endividamento das famílias %`)) +
+  geom_area(fill="#69b3a2", alpha=0.5) +
+  geom_line(color="#69b3a2") +
+  ylab("Endividamento das famílias %") +
+  theme_ipsum()
 
+# Turn it interactive with ggplotly
+p <- ggplotly(p)
+p

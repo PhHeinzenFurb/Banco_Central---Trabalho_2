@@ -1,21 +1,24 @@
 ---
-title: "apresentacao"
-author: "eu"
+title: "Análise de Energia e Poluição"
+author: "Pedro Henrique Heinzen"
 format: html
-server: shiny
+editor: visual
 ---
 
-
-
 ```{r}
-#| context: setup
-#| warning: false
-#| include: false
+#| label: load-packages # nomes únicos
+#| include: false # não inclui o resultado no doc
 
 library(GetBCBData)
 library(tidyverse)
 library(lubridate)
-library(bslib)
+library(geobr)
+library(sf)
+library(ggiraph) 
+library(patchwork)
+library(plotly)
+library(ggpubr)
+library(hrbrthemes)
 
 # FUNÇÃO PARA EXTRAIR OS DADOS DO BCB VIA BIBLIOTECA GetBCBData
 get_bcb_data <- function(id, first_date){
@@ -30,120 +33,127 @@ get_bcb_data <- function(id, first_date){
   )
 }
 
-# ids pra os dados de saldo de operações de crédito para os estados
-ids_saldos_estados <- c("AC" = 14002, "AP" = 14004, "AM" = 14005, "PA" = 14015, 
-                        "RO" = 14023, "RR" = 14024, "TO" = 14028, "AL" = 14003, 
-                        "BA" = 14006, "CE" = 14007, "MA" = 14011, "PB" = 14016, 
-                        "PE" = 14018, "PI" = 14019, "RN" = 14021, "SE" = 14027, 
-                        "GO" = 14010, "DF" = 14008, "MT" = 14012, "MS" = 14013, 
-                        "ES" = 14009, "MG" = 14014, "RJ" = 14020, "SP" = 14026, 
-                        "SC" = 14025, "PR" = 14017, "RS" = 14022)
-
-# ids pra os dados de saldo de operações de crédito para os estados
-ids_inad_estados <- c("AC" = 15861, "AP" = 15863, "AM" = 15864, "PA" = 15874, 
-                      "RO" = 15882, "RR" = 15883, "TO" = 15887, "AL" = 15862, 
-                      "BA" = 15865, "CE" = 15866, "MA" = 15870, "PB" = 15875, 
-                      "PE" = 15877, "PI" = 15878, "RN" = 15880, "SE" = 15886, 
-                      "GO" = 15869, "DF" = 15867, "MT" = 15871, "MS" = 15872, 
-                      "ES" = 15868, "MG" = 15873, "RJ" = 15879, "SP" = 15885, 
-                      "SC" = 15884, "PR" = 15876, "RS" = 15881)
-
-# extraindo os dados do Banco Central
-df_saldosCredito <- get_bcb_data(ids_saldos_estados, "2020-01-01")
-df_inadCredito <- get_bcb_data(ids_inad_estados, "2020-01-01")
-
-# criando df com as informações dos estados e regioes
-series.name <- c("AC", "AP", "AM", "PA", "RO", "RR", "TO", "AL", "BA", "CE", "MA", 
-                 "PB", "PE", "PI", "RN", "SE", "GO", "DF", "MT", "MS", "ES", "MG",
-                 "RJ", "SP", "SC", "PR", "RS")
-
-regioes <- c("Norte","Norte","Norte","Norte","Norte","Norte","Norte","Nordeste",
-             "Nordeste","Nordeste","Nordeste","Nordeste","Nordeste","Nordeste",
-             "Nordeste","Nordeste","Centro Oeste","Centro Oeste","Centro Oeste",
-             "Centro Oeste","Sudeste","Sudeste","Sudeste","Sudeste","Sul","Sul",
-             "Sul")
-
-df_estados_regioes <- data.frame(series.name, regioes)
-
-# renomeando colunas
-df_saldosCredito <- df_saldosCredito |>
-  rename(saldoCredito = value)
-
-df_inadCredito <- df_inadCredito |>
-  rename(inadCredito = value)
-
-# juntado saldosCredito e inadCredito
-df_saldosInadCredito <- df_saldosCredito |>
-  left_join(df_inadCredito, by = c("series.name", "ref.date"))
-
-# juntado com df_estados_regioes para atrair as regioes de cada estado
-df_saldosInadCredito <- df_saldosInadCredito |>
-  left_join(df_estados_regioes, by = "series.name") |>
-  mutate(
-    ano = year(ref.date),
-    mes = month(ref.date)
-  ) |>
-  filter(mes == 12)
-```
-
-```{r}
-layout_sidebar(
-  sidebar = sidebar(
-    shiny::selectizeInput(
-      "select_regioes",
-      "regioes_destacadas",
-      choices = c("Centro Oeste", "Nordeste", "Norte", "Sudeste", "Sul"),
-      selected = c("Centro Oeste", "Nordeste", "Norte", "Sudeste", "Sul"),
-      multiple = TRUE
-    ),
-    shiny::selectInput(
-      "ano",
-      "Selecione o ano",
-      choices = seq(2020, 2024),
-      selected = 2024
+# FUNÇÃO PARA TRATAMENTO PADRÃO DOS DADOS GERADOS POR get_bcb_data
+df_bcb_format <- function(df){
+  df |>
+    select(-id.num) |>
+    pivot_wider(
+      names_from = series.name,
+      values_from = value
     )
-  ),
-  shiny::plotOutput("output_plot")
-)
+}
+
+
+# criando lista para códigos das inadimplencias das operações de crédito
+ids_inad <- c("Sul" = 15892,
+              "Sudeste" = 15891,
+              "Centro Oeste" = 15890,
+              "Nordeste" = 15889,
+              "Norte" = 15888)
+
+# criando df para as inadiplencias de operações de crédito em cada região
+df_inadCred_regioes <- get_bcb_data(ids_inad, "2012-01-01")
+
+# id endividamento das familias
+my_id_29037 <- c("Endividamento das famílias %" = 29037)
+
+# criando e tratando a tabela df_endiv
+df_endiv <- get_bcb_data(my_id_29037, "2012-02-01")
+df_endiv_format <- df_bcb_format(df_endiv)
+
+# extraindo ano e mes da coluna ref.date
+# renomeando a coluna "value"
+# filtrando o saldo para o mes 12
+# retirando as colunas ref.date, is.num, series.name
+df_inadCred_regioes <- df_inadCred_regioes |>
+  mutate(
+    mes = month(ref.date),
+    ano = year(ref.date)
+  ) |>
+  rename(`Taxa_inadimplencia(%)` = value,
+         name_region = series.name) |>
+  filter(mes == 12) |>
+  select(-c(ref.date, id.num))
+
+
 ```
 
 ```{r}
-#| context: server
+#| label: dadosempainel
+#| warning: false
+#| echo: false
 
-output$output_plot <- shiny::renderPlot({
-  df_saldosInadCredito |>
-    dplyr::filter(
-      regioes %in% input$select_regioes,
-      ano == input$ano
-      ) |>
-    ggplot(
-      aes(
-        x = saldoCredito,
-        y = inadCredito,
-        fill = regioes
-      )
-    ) +
-    geom_point(
-      shape = 21,
-      size = 6, 
-      col = "black"
-    ) +
-    labs(
-      x = "Saldo das Operações de Crédito",
-      y = "Taxa de Inadimplência nas Operações de Crédito",
-      fill = "Regiões",
-      title = "Operações de Crédito e Inadimplência no Brasil (2020 - 2024)"
-    ) +
-    theme_minimal() +
-    scale_fill_manual(
-      values = c(
-        `Centro Oeste` = "#D81B60",
-        Norte = "#1E88E5",
-        Nordeste = "#FFC107",
-        Sudeste = "#004D40",
-        Sul = "#E66100"
-      )
-    ) 
-})
+# fazendo gráfico de linhas mais mapa
+p <- df_endiv_format %>%
+  ggplot( aes(x=ref.date, y=`Endividamento das famílias %`)) +
+  geom_area(fill="#69b3a2", alpha=0.5) +
+  geom_line(color="#69b3a2") +
+  ylab("Endividamento das famílias %") +
+  theme_ipsum()
+
+# Turn it interactive with ggplotly
+p <- ggplotly(p)
+p
+
 ```
 
+```{r}
+#| label: serietemporal
+#| warning: false
+#| echo: false
+
+# trabalhando com os dados de saldo das operações de crédito
+mapa_regiao <- read_region(year = 2020)
+
+df_inadCred_regioes_geo <- mapa_regiao |>
+  left_join(df_inadCred_regioes, by = "name_region")
+
+# criando mapa base para a interatividade
+p1 <- ggplot() +
+  geom_sf(data = filter(df_inadCred_regioes_geo, ano == 2024),
+          fill = "lightgrey", color = "lightgrey") +
+  geom_sf_interactive(data = filter(df_inadCred_regioes_geo, ano == 2024),
+                      aes(fill = name_region,
+                          tooltip = name_region,
+                          data_id = name_region)) +
+  coord_sf(crs = st_crs(3857)) +
+  theme_void() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
+
+# criando geom_col com os valores de cada regiao
+p2 <- ggplot(df_inadCred_regioes_geo, 
+                          aes(
+                            x = reorder(name_region, `Taxa_inadimplencia(%)`),
+                            y = `Taxa_inadimplencia(%)`,
+                            tooltip = name_region,
+                            data_id = name_region,
+                            fill = name_region)
+                          ) +
+  geom_col_interactive(data = filter(df_inadCred_regioes_geo, ano == 2024)) +
+  coord_flip() + 
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
+
+# combinando os dois gráficos 
+combined_plot <- p1 + p2
+
+# criando a interatividade
+mapa_int <- girafe(ggobj = combined_plot)
+mapa_int <- girafe_options(
+  mapa_int,
+  opts_hover(css = "fill:red;stroke:black")
+) 
+
+mapa_int
+
+```
+
+## 
