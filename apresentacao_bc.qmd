@@ -15,70 +15,28 @@ O presente trabalho se dedica à análises simples nas taxas de endividamento da
 
 library(GetBCBData)
 library(tidyverse)
-library(lubridate)
-library(geobr)
-library(sf)
-library(ggiraph) 
-library(patchwork)
-library(plotly)
-library(ggpubr)
-library(hrbrthemes)
-
-# FUNÇÃO PARA EXTRAIR OS DADOS DO BCB VIA BIBLIOTECA GetBCBData
-get_bcb_data <- function(id, first_date){
-  gbcbd_get_series(
-    id = id,
-    first.date = first_date,
-    last.date = Sys.Date(),
-    format.data = "long",
-    use.memoise = TRUE,
-    cache.path = tempdir(),
-    do.parallel = FALSE
-  )
-}
-
-# FUNÇÃO PARA TRATAMENTO PADRÃO DOS DADOS GERADOS POR get_bcb_data
-df_bcb_format <- function(df){
-  df |>
-    select(-id.num) |>
-    pivot_wider(
-      names_from = series.name,
-      values_from = value
-    )
-}
-
-
-# criando lista para códigos das inadimplencias das operações de crédito
-ids_inad <- c("Sul" = 15892,
-              "Sudeste" = 15891,
-              "Centro Oeste" = 15890,
-              "Nordeste" = 15889,
-              "Norte" = 15888)
-
-# criando df para as inadiplencias de operações de crédito em cada região
-df_inadCred_regioes <- get_bcb_data(ids_inad, "2012-01-01")
+library(gganimate)
 
 # id endividamento das familias
 my_id_29037 <- c("Endividamento das famílias %" = 29037)
 
 # criando e tratando a tabela df_endiv
-df_endiv <- get_bcb_data(my_id_29037, "2012-02-01")
-df_endiv_format <- df_bcb_format(df_endiv)
+df_endiv <-  gbcbd_get_series(
+  id = my_id_29037,
+  first.date = "2012-01-01",
+  last.date = Sys.Date(),
+  format.data = "long",
+  use.memoise = TRUE,
+  cache.path = tempdir(),
+  do.parallel = FALSE
+)
 
-# extraindo ano e mes da coluna ref.date
-# renomeando a coluna "value"
-# filtrando o saldo para o mes 12
-# retirando as colunas ref.date, is.num, series.name
-df_inadCred_regioes <- df_inadCred_regioes |>
-  mutate(
-    mes = month(ref.date),
-    ano = year(ref.date)
-  ) |>
-  rename(`Taxa_inadimplencia(%)` = value,
-         name_region = series.name) |>
-  filter(mes == 12) |>
-  select(-c(ref.date, id.num))
-
+df_endiv_format <- df_endiv |>
+  select(-id.num) |>
+  pivot_wider(
+    names_from = series.name,
+    values_from = value
+  )
 
 ```
 
@@ -86,91 +44,25 @@ df_inadCred_regioes <- df_inadCred_regioes |>
 
 ## Endividamento das Famílias Brasileiras
 
-O código utilizado para esta análise foi o `29037` extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal. É possível interagir na linha do gráfico, permitindo verificar os valor para cada mês.
+O código utilizado para esta análise foi o `29037` extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal.
 
 ```{r}
 #| label: endividamento-famílias
 #| warning: false
 #| echo: false
 
-# fazendo gráfico de linhas mais mapa
-p <- df_endiv_format %>%
-  ggplot( aes(x=ref.date, y=`Endividamento das famílias %`)) +
-  geom_area(fill="#69b3a2", alpha=0.5) +
-  geom_line(color="#69b3a2") +
-  ylab("Endividamento das famílias %") +
-  theme_ipsum() +
+df_endiv_format |>
+  ggplot(aes(x = ref.date, y = `Endividamento das famílias %`)) +
+  geom_line(color = "green", linewidth = 1) +
+  geom_point(color = "darkred", size = 2) +
   labs(
-    title = "Taxa de Endividamento das Famílias Brasileiras (2012 - 2025)"
-  )
-
-# Turn it interactive with ggplotly
-p <- ggplotly(p)
-p
-
+    title = 'Endividamento das Famílias no Brasil (2012 - 2025)',
+    subtitle = 'Data: {frame_along}',
+    x = 'Data',
+    y = 'Endividamento (%)'
+  ) +
+  theme_minimal() +
+  transition_reveal(ref.date)
 ```
 
 ------------------------------------------------------------------------
-
-## Inadimplência de Pessoas Físicas em Operações de Crédito
-
-Os gráficos abaixo pegam como referência os dados de acordo com a região do país (códigos: `15892`, `15891`, `15890`, `15889`, `15888`). Foram consideradas as taxas de inadimplência de pessoas físicas, e se entendem por operações de crédito empréstimos e finaciamentos fornecidos por instiuições financeiras. Os gráficos interagem entre si na medida em que a região selecionada destaca a posição em relação à taxa de inadimplência. Os dados são referentes ao ano de 2024.
-
-```{r}
-#| label: inadimplencia-pessoas-fisicas
-#| warning: false
-#| echo: false
-
-# trabalhando com os dados de saldo das operações de crédito
-mapa_regiao <- read_region(year = 2020)
-
-df_inadCred_regioes_geo <- mapa_regiao |>
-  left_join(df_inadCred_regioes, by = "name_region")
-
-# criando mapa base para a interatividade
-p1 <- ggplot() +
-  geom_sf(data = filter(df_inadCred_regioes_geo, ano == 2024),
-          fill = "lightgrey", color = "lightgrey") +
-  geom_sf_interactive(data = filter(df_inadCred_regioes_geo, ano == 2024),
-                      aes(fill = name_region,
-                          tooltip = name_region,
-                          data_id = name_region)) +
-  coord_sf(crs = st_crs(3857)) +
-  theme_void() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    legend.position = "none"
-  )
-
-# criando geom_col com os valores de cada regiao
-p2 <- ggplot(df_inadCred_regioes_geo, 
-                          aes(
-                            x = reorder(name_region, `Taxa_inadimplencia(%)`),
-                            y = `Taxa_inadimplencia(%)`,
-                            tooltip = name_region,
-                            data_id = name_region,
-                            fill = name_region)
-                          ) +
-  geom_col_interactive(data = filter(df_inadCred_regioes_geo, ano == 2024)) +
-  coord_flip() + 
-  theme_minimal() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    legend.position = "none"
-  )
-
-# combinando os dois gráficos 
-combined_plot <- p1 + p2
-
-# criando a interatividade
-mapa_int <- girafe(ggobj = combined_plot)
-mapa_int <- girafe_options(
-  mapa_int,
-  opts_hover(css = "fill:red;stroke:black")
-) 
-
-mapa_int
-
-```

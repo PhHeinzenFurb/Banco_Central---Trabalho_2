@@ -32,14 +32,14 @@
     "href": "apresentacao_bc.html",
     "title": "Análise de Endividamento e Inadimplência",
     "section": "",
-    "text": "O presente trabalho se dedica à análises simples nas taxas de endividamento das famílias brasileiras e na taxa de inadimplência das pessoas físicas nas operações de crédito. Os dados foram extraidos do Sistema Gerenciador de Séries Temporais do Banco Central (SGS)\n\n\n\nO código utilizado para esta análise foi o 29037 extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal. É possível interagir na linha do gráfico, permitindo verificar os valor para cada mês.\n\n\n\n\n\n\n\n\n\n\nOs gráficos abaixo pegam como referência os dados de acordo com a região do país (códigos: 15892, 15891, 15890, 15889, 15888). Foram consideradas as taxas de inadimplência de pessoas físicas, e se entendem por operações de crédito empréstimos e finaciamentos fornecidos por instiuições financeiras. Os gráficos interagem entre si na medida em que a região selecionada destaca a posição em relação à taxa de inadimplência. Os dados são referentes ao ano de 2024."
+    "text": "O presente trabalho se dedica à análises simples nas taxas de endividamento das famílias brasileiras e na taxa de inadimplência das pessoas físicas nas operações de crédito. Os dados foram extraidos do Sistema Gerenciador de Séries Temporais do Banco Central (SGS)\n\n\n\nO código utilizado para esta análise foi o 29037 extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal."
   },
   {
     "objectID": "apresentacao_bc.html#endividamento-das-famílias-brasileiras",
     "href": "apresentacao_bc.html#endividamento-das-famílias-brasileiras",
     "title": "Análise de Endividamento e Inadimplência",
     "section": "",
-    "text": "O código utilizado para esta análise foi o 29037 extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal. É possível interagir na linha do gráfico, permitindo verificar os valor para cada mês."
+    "text": "O código utilizado para esta análise foi o 29037 extraído do SGS. A informação retorna as taxas de endividamento das famílias brasileiras com o Sistema Financeiro Nacional de acordo com a renda acumulada nos últimos doze meses. A série temporal escolhida foi de 2012 a 2025, sendo que as medições são feitas de forma mensal."
   },
   {
     "objectID": "apresentacao_bc.html#inadimplência-de-pessoas-físicas-em-operações-de-crédito",
