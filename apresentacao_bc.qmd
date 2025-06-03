@@ -7,7 +7,7 @@ editor: visual
 
 # Apresentação
 
-O presente trabalho se dedica à análises simples nas taxas de endividamento das famílias brasileiras e na taxa de inadimplência das pessoas físicas nas operações de crédito. Os dados foram extraidos do Sistema Gerenciador de Séries Temporais do Banco Central ([SGS](https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries))
+O presente trabalho se dedica à análises simples nas taxas de endividamento das famílias brasileiras. Os dados foram extraidos do Sistema Gerenciador de Séries Temporais do Banco Central ([SGS](https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries))
 
 ```{r}
 #| label: load-packages # nomes únicos
